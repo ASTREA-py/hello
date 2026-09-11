@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ed293f">
+  <meta name="description" content="ASTREA™ — Nuevas maneras de mostrarte, nuevas maneras de vender.">
+  <title>ASTREA™</title>
+
+  <!-- Activar cuando exista el archivo:
+  <link rel="icon" href="./assets/icons/ASTREA_favicon.png">
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <main class="site-shell">
+    <div class="ambient" aria-hidden="true">
+      <span class="ring ring--left"></span>
+      <span class="ring ring--right"></span>
+    </div>
+
+    <section class="experience" aria-live="polite">
+      <!-- INTRO -->
+      <div class="state state--intro is-active" data-state="intro">
+        <div class="intro-copy">
+          <p class="intro-kicker">Tu comercio,</p>
+          <h1>más simple.</h1>
+          <p class="intro-brand">con ASTREA™</p>
+        </div>
+        <button class="button button--primary intro-cta" type="button" data-action="open-form">
+          QUIERO SABER CÓMO
+        </button>
+      </div>
+
+      <!-- FORM -->
+      <div class="state state--form" data-state="form" aria-hidden="true">
+        <form class="lead-form" id="leadForm" novalidate>
+          <div class="form-card">
+            <header class="form-header">
+              <h2>Queremos conocer tu negocio</h2>
+              <p>Contanos un poco sobre lo que hacés. Con algunos datos podemos entender mejor lo que necesitás y mostrarte cómo ASTREA™ puede ayudarte.</p>
+            </header>
+
+            <div class="form-body" tabindex="0">
+              <div class="field">
+                <label for="name">Tu nombre <span aria-hidden="true">*</span></label>
+                <input id="name" name="name" type="text" placeholder="Ej. Andrea" autocomplete="given-name" required>
+                <small class="field-error"></small>
+              </div>
+
+              <div class="field">
+                <label for="whatsapp">Tu WhatsApp <span aria-hidden="true">*</span></label>
+                <input id="whatsapp" name="whatsapp" type="tel" placeholder="+595 981 000 000" autocomplete="tel" required>
+                <small class="field-error"></small>
+              </div>
+
+              <div class="field">
+                <label for="email">Correo electrónico <em>opcional</em></label>
+                <input id="email" name="email" type="email" placeholder="nombre@correo.com" autocomplete="email">
+                <small class="field-error"></small>
+              </div>
+
+              <div class="field">
+                <label for="businessName">Nombre de tu negocio <span aria-hidden="true">*</span></label>
+                <input id="businessName" name="businessName" type="text" placeholder="Ej. Tienda San José" autocomplete="organization" required>
+                <small class="field-error"></small>
+              </div>
+
+              <div class="field">
+                <label for="city">¿En qué ciudad se encuentra tu negocio? <span aria-hidden="true">*</span></label>
+                <input id="city" name="city" type="text" placeholder="Ej. Asunción" autocomplete="address-level2" required>
+                <small class="field-error"></small>
+              </div>
+
+              <div class="field">
+                <label for="category">¿A qué se dedica tu negocio? <span aria-hidden="true">*</span></label>
+                <select id="category" name="category" required>
+                  <option value="">Seleccioná un rubro</option>
+                  <option>Ropa y accesorios</option>
+                  <option>Calzados</option>
+                  <option>Belleza y cuidado personal</option>
+                  <option>Alimentos y bebidas</option>
+                  <option>Hogar y decoración</option>
+                  <option>Ferretería y construcción</option>
+                  <option>Tecnología y electrónica</option>
+                  <option>Repuestos y accesorios para vehículos</option>
+                  <option>Librería y papelería</option>
+                  <option>Regalos y artesanías</option>
+                  <option>Mascotas</option>
+                  <option>Salud y bienestar</option>
+                  <option>Servicios</option>
+                  <option>Otro</option>
+                </select>
+                <small class="field-error"></small>
+              </div>
+
+              <div class="field conditional" id="categoryOtherField" hidden>
+                <label for="categoryOther">¿Cuál? <span aria-hidden="true">*</span></label>
+                <input id="categoryOther" name="categoryOther" type="text" placeholder="Contanos brevemente">
+                <small class="field-error"></small>
+              </div>
+
+              <fieldset class="field choice-group">
+                <legend>¿Cuántos productos te gustaría mostrar? <span aria-hidden="true">*</span></legend>
+                <div class="choice-grid choice-grid--products">
+                  <label class="choice"><input type="radio" name="productRange" value="Hasta 10" required><span>Hasta 10</span></label>
+                  <label class="choice"><input type="radio" name="productRange" value="11 a 50"><span>11 a 50</span></label>
+                  <label class="choice"><input type="radio" name="productRange" value="51 a 100"><span>51 a 100</span></label>
+                  <label class="choice"><input type="radio" name="productRange" value="Más de 100"><span>Más de 100</span></label>
+                  <label class="choice choice--wide"><input type="radio" name="productRange" value="No estoy seguro/a"><span>No estoy seguro/a</span></label>
+                </div>
+                <small class="field-error"></small>
+              </fieldset>
+
+              <fieldset class="field choice-group" data-checkbox-group>
+                <legend>¿Cómo vendés actualmente? <span aria-hidden="true">*</span></legend>
+                <p class="field-help">Podés seleccionar más de una opción.</p>
+                <div class="choice-grid">
+                  <label class="choice"><input type="checkbox" name="salesChannels" value="Local físico"><span>Local físico</span></label>
+                  <label class="choice"><input type="checkbox" name="salesChannels" value="WhatsApp"><span>WhatsApp</span></label>
+                  <label class="choice"><input type="checkbox" name="salesChannels" value="Instagram / redes sociales"><span>Instagram / redes</span></label>
+                  <label class="choice"><input type="checkbox" name="salesChannels" value="Página web o tienda online"><span>Web / tienda online</span></label>
+                  <label class="choice"><input type="checkbox" name="salesChannels" value="Marketplace"><span>Marketplace</span></label>
+                  <label class="choice"><input type="checkbox" name="salesChannels" value="Solo por recomendación/contactos"><span>Recomendación / contactos</span></label>
+                  <label class="choice"><input type="checkbox" name="salesChannels" value="Todavía no empecé a vender"><span>Todavía no empecé</span></label>
+                  <label class="choice"><input id="salesOther" type="checkbox" name="salesChannels" value="Otro"><span>Otro</span></label>
+                </div>
+                <small class="field-error"></small>
+              </fieldset>
+
+              <div class="field conditional" id="salesOtherField" hidden>
+                <label for="salesOtherText">¿Cuál? <span aria-hidden="true">*</span></label>
+                <input id="salesOtherText" name="salesOtherText" type="text" placeholder="Contanos brevemente">
+                <small class="field-error"></small>
+              </div>
+
+              <div class="field">
+                <label for="digitalPresence">Instagram o web de tu negocio <em>opcional</em></label>
+                <input id="digitalPresence" name="digitalPresence" type="text" placeholder="@tunegocio o tu página web">
+                <small class="field-error"></small>
+              </div>
+
+              <div class="field">
+                <label for="comment">¿Hay algo que quieras contarnos? <em>opcional</em></label>
+                <textarea id="comment" name="comment" rows="4" maxlength="500" placeholder="Contanos brevemente qué necesitás o qué te gustaría mejorar en tu negocio."></textarea>
+                <div class="field-meta"><span></span><span id="commentCount">0 / 500</span></div>
+                <small class="field-error"></small>
+              </div>
+            </div>
+
+            <footer class="form-footer">
+              <button class="button button--primary" type="submit" id="submitButton">
+                <span class="button-label">ENVIAR</span>
+              </button>
+            </footer>
+          </div>
+
+          <p class="privacy-note">
+            Al enviar tus datos, aceptás que ASTREA™ los utilice para responder a tu solicitud y contactarte comercialmente.
+          </p>
+        </form>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="state state--success" data-state="success" aria-hidden="true">
+        <div class="success-card">
+          <div>
+            <h2>¡Gracias!</h2>
+            <p>Tu negocio está a un paso<br>más cerca de crecer.</p>
+          </div>
+          <a class="button button--primary" href="https://www.instagram.com/astrea.ndive/" target="_blank" rel="noopener noreferrer">
+            SEGUÍ LAS NOVEDADES
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="wordmark" aria-label="ASTREA">ASTREA<span>™</span></div>
+  </main>
+
+  <script src="./js/app.js"></script>
+</body>
+</html>

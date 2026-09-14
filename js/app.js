@@ -1,4 +1,7 @@
 (() => {
+ 
+  const LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbynJGYwj9_xwSg9G3jSekYv6o6Ape76-QGQ0uplS-bUerBEXqaaCtw_ptroZhl9jmCb/exec";
+
   const states = [...document.querySelectorAll("[data-state]")];
   const form = document.getElementById("leadForm");
   const openButton = document.querySelector('[data-action="open-form"]');
@@ -43,8 +46,7 @@
     commentCount.textContent = `${comment.value.length} / 500`;
   });
 
-  const fieldContainer = (control) =>
-    control.closest(".field") || control.closest("fieldset");
+  const fieldContainer = (control) => control.closest(".field") || control.closest("fieldset");
 
   const setError = (control, message) => {
     const field = fieldContainer(control);
@@ -67,10 +69,7 @@
       if (!(control instanceof HTMLElement) || control.disabled || control.type === "checkbox" || control.type === "radio") return;
       if (!control.checkValidity()) {
         if (!firstInvalid) firstInvalid = control;
-        const message = control.validity.typeMismatch
-          ? "Revisá el formato de este dato."
-          : "Este campo es obligatorio.";
-        setError(control, message);
+        setError(control, control.validity.typeMismatch ? "Revisá el formato de este dato." : "Este campo es obligatorio.");
       }
     });
 
@@ -89,35 +88,83 @@
     }
 
     if (firstInvalid) {
-      const field = fieldContainer(firstInvalid);
-      field?.scrollIntoView({ behavior: "smooth", block: "center" });
+      fieldContainer(firstInvalid)?.scrollIntoView({ behavior: "smooth", block: "center" });
       window.setTimeout(() => firstInvalid.focus({ preventScroll: true }), 260);
       return false;
     }
     return true;
   };
 
-  form.addEventListener("input", (event) => {
-    const field = fieldContainer(event.target);
-    if (field) field.classList.remove("has-error");
-  });
-  form.addEventListener("change", (event) => {
-    const field = fieldContainer(event.target);
-    if (field) field.classList.remove("has-error");
-  });
+  form.addEventListener("input", (event) => fieldContainer(event.target)?.classList.remove("has-error"));
+  form.addEventListener("change", (event) => fieldContainer(event.target)?.classList.remove("has-error"));
+
+  const getTracking = () => {
+    const qs = new URLSearchParams(window.location.search);
+    return {
+      source: qs.get("utm_source") || document.referrer || "direct",
+      campaign: qs.get("utm_campaign") || "",
+      medium: qs.get("utm_medium") || "",
+      origin: "hello"
+    };
+  };
+
+  const buildPayload = () => {
+    const data = new FormData(form);
+    const tracking = getTracking();
+    return {
+      name: String(data.get("name") || "").trim(),
+      whatsapp: String(data.get("whatsapp") || "").trim(),
+      email: String(data.get("email") || "").trim(),
+      businessName: String(data.get("businessName") || "").trim(),
+      city: String(data.get("city") || "").trim(),
+      category: String(data.get("category") || ""),
+      categoryOther: String(data.get("categoryOther") || "").trim(),
+      productRange: String(data.get("productRange") || ""),
+      salesChannels: data.getAll("salesChannels"),
+      salesOtherText: String(data.get("salesOtherText") || "").trim(),
+      digitalPresence: String(data.get("digitalPresence") || "").trim(),
+      comment: String(data.get("comment") || "").trim(),
+      source: tracking.source,
+      medium: tracking.medium,
+      campaign: tracking.campaign,
+      origin: tracking.origin,
+      pageUrl: window.location.href,
+      status: "Nuevo"
+    };
+  };
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!validate()) return;
 
+    if (!LEAD_ENDPOINT.startsWith("https://script.google.com/")) {
+      alert("Falta configurar la URL del endpoint de Google Apps Script en js/app.js.");
+      return;
+    }
+
     submitButton.disabled = true;
     submitLabel.textContent = "ENVIANDO…";
 
-    // v0.1: envío simulado. En la siguiente etapa se reemplaza por el endpoint real.
-    await new Promise((resolve) => window.setTimeout(resolve, 850));
+    try {
+      // Apps Script Web Apps no garantizan una respuesta CORS legible desde GitHub Pages.
+      // no-cors permite entregar el POST; la confirmación definitiva queda registrada
+      // en la Sheet y por correo. Para un backend con ACK verificable se requerirá
+      // un endpoint con CORS explícito en una etapa posterior.
+      await fetch(LEAD_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(buildPayload())
+      });
 
-    submitLabel.textContent = "ENVIAR";
-    submitButton.disabled = false;
-    showState("success");
+      showState("success");
+      form.reset();
+    } catch (error) {
+      console.error(error);
+      alert("No pudimos enviar tus datos. Revisá tu conexión e intentá nuevamente.");
+    } finally {
+      submitLabel.textContent = "ENVIAR";
+      submitButton.disabled = false;
+    }
   });
 })();

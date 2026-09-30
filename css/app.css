@@ -180,13 +180,6 @@ input:focus-visible, textarea:focus-visible,
   padding: clamp(30px, 5vw, 54px) clamp(26px, 5vw, 58px) 22px;
   text-align: center;
 }
-.access-eyebrow {
-  margin: 0 0 12px;
-  color: var(--white-72);
-  font-size: .7rem;
-  font-weight: 700;
-  letter-spacing: .12em;
-}
 .access-header h2 {
   margin: 0;
   font-size: clamp(2rem, 3.6vw, 3.1rem);
@@ -562,4 +555,13 @@ input:focus-visible, textarea:focus-visible,
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+}
+
+
+/* El acceso usa el mismo tratamiento sobrio del formulario:
+   sin halo/doble resaltado de foco. */
+.access-input:focus-visible {
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
 }

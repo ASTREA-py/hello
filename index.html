@@ -7,10 +7,6 @@
   <meta name="description" content="ASTREA™ — Nuevas maneras de mostrarte, nuevas maneras de vender.">
   <title>ASTREA™</title>
 
-  <!-- Activar cuando exista el archivo:
-  <link rel="icon" href="./assets/icons/ASTREA_favicon.png">
-  -->
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -18,10 +14,10 @@
 </head>
 <body>
   <main class="site-shell">
-    <div class="ambient" aria-hidden="true">
-      <span class="ring ring--left"></span>
-      <span class="ring ring--right"></span>
-    </div>
+    <header class="site-header" id="siteHeader">
+      <div class="brand-wordmark" aria-label="ASTREA">ASTREA<span>™</span></div>
+      <button class="access-entry" type="button" data-action="open-access">INGRESÁ TU CÓDIGO</button>
+    </header>
 
     <section class="experience" aria-live="polite">
       <!-- INTRO -->
@@ -34,6 +30,22 @@
         <button class="button button--primary intro-cta" type="button" data-action="open-form">
           QUIERO SABER CÓMO
         </button>
+      </div>
+
+      <!-- ACCESS PERSONALIZADO -->
+      <div class="state state--client" data-state="client" aria-hidden="true">
+        <div class="client-card">
+          <p class="client-kicker">¡Hola!</p>
+          <h1 id="clientBusinessName">Tu comercio</h1>
+          <div class="client-actions">
+            <a class="button button--primary client-link" id="demoLink" href="#" target="_blank" rel="noopener noreferrer">
+              EXPLORAR DEMO
+            </a>
+            <a class="button button--primary client-link" id="proposalLink" href="#" target="_blank" rel="noopener noreferrer">
+              CONOCER OFERTA
+            </a>
+          </div>
+        </div>
       </div>
 
       <!-- FORM -->
@@ -76,25 +88,57 @@
                 <small class="field-error"></small>
               </div>
 
-              <div class="field">
-                <label for="category">¿A qué se dedica tu negocio? <span aria-hidden="true">*</span></label>
-                <select id="category" name="category" required>
-                  <option value="">Seleccioná un rubro</option>
-                  <option>Ropa y accesorios</option>
-                  <option>Calzados</option>
-                  <option>Belleza y cuidado personal</option>
-                  <option>Alimentos y bebidas</option>
-                  <option>Hogar y decoración</option>
-                  <option>Ferretería y construcción</option>
-                  <option>Tecnología y electrónica</option>
-                  <option>Repuestos y accesorios para vehículos</option>
-                  <option>Librería y papelería</option>
-                  <option>Regalos y artesanías</option>
-                  <option>Mascotas</option>
-                  <option>Salud y bienestar</option>
-                  <option>Servicios</option>
-                  <option>Otro</option>
-                </select>
+              <div class="field" id="categoryField">
+                <label for="categoryTrigger">¿A qué se dedica tu negocio? <span aria-hidden="true">*</span></label>
+
+                <div class="select-shell" id="categoryPicker">
+                  <select id="category" name="category" class="select-native" aria-hidden="true" tabindex="-1">
+                    <option value="">Seleccioná un rubro</option>
+                    <option>Ropa y accesorios</option>
+                    <option>Calzados</option>
+                    <option>Belleza y cuidado personal</option>
+                    <option>Alimentos y bebidas</option>
+                    <option>Hogar y decoración</option>
+                    <option>Ferretería y construcción</option>
+                    <option>Tecnología y electrónica</option>
+                    <option>Repuestos y accesorios para vehículos</option>
+                    <option>Librería y papelería</option>
+                    <option>Regalos y artesanías</option>
+                    <option>Mascotas</option>
+                    <option>Salud y bienestar</option>
+                    <option>Servicios</option>
+                    <option>Otro</option>
+                  </select>
+
+                  <button
+                    id="categoryTrigger"
+                    class="select-trigger"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-controls="categoryOptions"
+                  >
+                    <span id="categoryLabel">Seleccioná un rubro</span>
+                    <span class="select-chevron" aria-hidden="true">⌄</span>
+                  </button>
+
+                  <div class="select-panel" id="categoryOptions" role="listbox" aria-label="Rubros" hidden>
+                    <button type="button" role="option" data-value="Ropa y accesorios">Ropa y accesorios</button>
+                    <button type="button" role="option" data-value="Calzados">Calzados</button>
+                    <button type="button" role="option" data-value="Belleza y cuidado personal">Belleza y cuidado personal</button>
+                    <button type="button" role="option" data-value="Alimentos y bebidas">Alimentos y bebidas</button>
+                    <button type="button" role="option" data-value="Hogar y decoración">Hogar y decoración</button>
+                    <button type="button" role="option" data-value="Ferretería y construcción">Ferretería y construcción</button>
+                    <button type="button" role="option" data-value="Tecnología y electrónica">Tecnología y electrónica</button>
+                    <button type="button" role="option" data-value="Repuestos y accesorios para vehículos">Repuestos y accesorios para vehículos</button>
+                    <button type="button" role="option" data-value="Librería y papelería">Librería y papelería</button>
+                    <button type="button" role="option" data-value="Regalos y artesanías">Regalos y artesanías</button>
+                    <button type="button" role="option" data-value="Mascotas">Mascotas</button>
+                    <button type="button" role="option" data-value="Salud y bienestar">Salud y bienestar</button>
+                    <button type="button" role="option" data-value="Servicios">Servicios</button>
+                    <button type="button" role="option" data-value="Otro">Otro</button>
+                  </div>
+                </div>
                 <small class="field-error"></small>
               </div>
 
@@ -179,7 +223,25 @@
       </div>
     </section>
 
-    <div class="wordmark" aria-label="ASTREA">ASTREA<span>™</span></div>
+    <!-- MODAL DE CÓDIGO -->
+    <div class="access-modal" id="accessModal" aria-hidden="true">
+      <button class="access-backdrop" type="button" data-action="close-access" aria-label="Cerrar"></button>
+      <section class="access-dialog" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
+        <button class="access-close" type="button" data-action="close-access" aria-label="Cerrar">×</button>
+        <p class="access-eyebrow">ACCESO PERSONALIZADO</p>
+        <h2 id="accessTitle">Ingresá tu código</h2>
+        <p class="access-copy">Usá el código que recibiste de ASTREA™ para acceder a tu demo y propuesta.</p>
+
+        <form id="accessForm" novalidate>
+          <label class="sr-only" for="accessCode">Código de acceso</label>
+          <input id="accessCode" class="access-input" type="text" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Ej. AST-PITI-7K4P">
+          <p class="access-error" id="accessError" role="alert"></p>
+          <button class="button button--primary access-submit" id="accessSubmit" type="submit">
+            <span class="button-label">CONTINUAR</span>
+          </button>
+        </form>
+      </section>
+    </div>
   </main>
 
   <script src="./js/app.js"></script>

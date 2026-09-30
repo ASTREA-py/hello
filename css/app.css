@@ -31,8 +31,11 @@ button, input, select, textarea { font: inherit; }
 .site-shell {
   position: relative;
   min-height: 100dvh;
+  height: 100dvh;
   overflow: hidden;
   isolation: isolate;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   background:
     radial-gradient(circle at 18% 40%, rgba(255,91,50,.55) 0 18%, transparent 44%),
     radial-gradient(circle at 82% 55%, rgba(179,15,108,.55) 0 20%, transparent 48%),
@@ -47,11 +50,8 @@ button, input, select, textarea { font: inherit; }
 }
 
 .site-header {
-  position: absolute;
+  position: relative;
   z-index: 20;
-  top: 0;
-  left: 0;
-  right: 0;
   min-height: 112px;
   padding: 34px clamp(28px, 8.5vw, 92px);
   display: flex;
@@ -87,7 +87,13 @@ button, input, select, textarea { font: inherit; }
 }
 .access-entry:hover { background: var(--white); color: var(--red); transform: translateY(-1px); }
 
-.experience { position: relative; z-index: 2; min-height: 100dvh; }
+.experience {
+  position: relative;
+  z-index: 2;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
 .state {
   position: absolute;
   inset: 0;
@@ -164,8 +170,8 @@ input:focus-visible, textarea:focus-visible,
 
 
 .state--access {
-  padding-top: 112px;
-  padding-bottom: 34px;
+  padding-top: 18px;
+  padding-bottom: 28px;
 }
 .access-card {
   width: min(650px, 92vw);
@@ -236,7 +242,7 @@ input:focus-visible, textarea:focus-visible,
 }
 .access-submit { min-width: min(280px, 100%); }
 
-.state--client { text-align: center; padding-top: 120px; }
+.state--client { text-align: center; padding-top: 18px; }
 .client-card { width: min(760px, 92vw); }
 .client-kicker {
   margin: 0 0 12px;
@@ -260,12 +266,12 @@ input:focus-visible, textarea:focus-visible,
 .client-actions .button { min-width: min(240px, 82vw); }
 
 .state--form {
-  padding-top: max(112px, calc(88px + env(safe-area-inset-top)));
-  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  padding-top: 12px;
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
 }
 .lead-form {
   width: min(720px, 92vw);
-  max-height: calc(100dvh - 132px);
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -274,7 +280,7 @@ input:focus-visible, textarea:focus-visible,
 .form-card {
   width: 100%;
   min-height: 0;
-  max-height: min(820px, calc(100dvh - 150px));
+  max-height: min(820px, 100%);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   border: 1.5px solid var(--white-72);
@@ -507,12 +513,12 @@ input:focus-visible, textarea:focus-visible,
 
 
 @media (max-width: 700px) {
-  .site-header { min-height: 88px; padding: 24px 20px; }
+  .site-header { min-height: 76px; padding: 18px 20px; }
   .access-entry { min-height: 34px; padding: 0 16px; font-size: .59rem; }
   .state { padding: 18px; }
   .state--intro { padding-bottom: 8vh; }
   .state--access,
-  .state--client { padding-top: 94px; }
+  .state--client { padding-top: 10px; }
   .access-card { width: 100%; border-radius: 22px; }
   .access-header { padding: 28px 20px 18px; }
   .access-body { padding: 4px 20px 8px; }
@@ -520,8 +526,8 @@ input:focus-visible, textarea:focus-visible,
   .intro-kicker, .intro-brand { font-size: clamp(1.65rem, 6.8vw, 2.15rem); }
   .intro-copy h1 { font-size: clamp(2.67rem, 11vw, 3.48rem); }
   .client-actions { flex-direction: column; align-items: center; }
-  .lead-form { width: 100%; max-height: calc(100dvh - 104px); }
-  .form-card { max-height: calc(100dvh - 126px); border-radius: 22px; }
+  .lead-form { width: 100%; max-height: 100%; }
+  .form-card { max-height: 100%; border-radius: 22px; }
   .form-header { padding: 22px 18px 15px; }
   .form-header p { font-size: .84rem; }
   .form-body { padding: 4px 18px 22px; }

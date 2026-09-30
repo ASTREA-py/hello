@@ -15,7 +15,9 @@
 <body>
   <main class="site-shell">
     <header class="site-header" id="siteHeader">
-      <div class="brand-wordmark" aria-label="ASTREA">ASTREA<span>™</span></div>
+      <button class="brand-wordmark home-wordmark" type="button" data-action="go-home" aria-label="Volver al inicio">
+        ASTREA<span>™</span>
+      </button>
       <button class="access-entry" type="button" data-action="open-access">INGRESÁ TU CÓDIGO</button>
     </header>
 
@@ -30,6 +32,38 @@
         <button class="button button--primary intro-cta" type="button" data-action="open-form">
           QUIERO SABER CÓMO
         </button>
+      </div>
+
+
+      <!-- ACCESS -->
+      <div class="state state--access" data-state="access" aria-hidden="true">
+        <form class="access-card" id="accessForm" novalidate>
+          <header class="access-header">
+            <p class="access-eyebrow">ACCESO PERSONALIZADO</p>
+            <h2>Ingresá tu código</h2>
+            <p>Usá el código que recibiste de ASTREA™ para acceder a tu demo y propuesta.</p>
+          </header>
+
+          <div class="access-body">
+            <label for="accessCode">Código de acceso</label>
+            <input
+              id="accessCode"
+              class="access-input"
+              type="text"
+              maxlength="80"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Ej. AST-PITI-7K4P"
+            >
+            <p class="access-error" id="accessError" role="alert"></p>
+          </div>
+
+          <footer class="access-footer">
+            <button class="button button--primary access-submit" id="accessSubmit" type="submit">
+              <span class="button-label">CONTINUAR</span>
+            </button>
+          </footer>
+        </form>
       </div>
 
       <!-- ACCESS PERSONALIZADO -->
@@ -222,26 +256,6 @@
         </div>
       </div>
     </section>
-
-    <!-- MODAL DE CÓDIGO -->
-    <div class="access-modal" id="accessModal" aria-hidden="true">
-      <button class="access-backdrop" type="button" data-action="close-access" aria-label="Cerrar"></button>
-      <section class="access-dialog" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
-        <button class="access-close" type="button" data-action="close-access" aria-label="Cerrar">×</button>
-        <p class="access-eyebrow">ACCESO PERSONALIZADO</p>
-        <h2 id="accessTitle">Ingresá tu código</h2>
-        <p class="access-copy">Usá el código que recibiste de ASTREA™ para acceder a tu demo y propuesta.</p>
-
-        <form id="accessForm" novalidate>
-          <label class="sr-only" for="accessCode">Código de acceso</label>
-          <input id="accessCode" class="access-input" type="text" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Ej. AST-PITI-7K4P">
-          <p class="access-error" id="accessError" role="alert"></p>
-          <button class="button button--primary access-submit" id="accessSubmit" type="submit">
-            <span class="button-label">CONTINUAR</span>
-          </button>
-        </form>
-      </section>
-    </div>
   </main>
 
   <script src="./js/app.js"></script>

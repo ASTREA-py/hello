@@ -261,32 +261,88 @@
   const openAccess = () => {
     accessError.textContent = "";
     showState("access");
-    window.setTimeout(() => accessCode.focus({ preventScroll: true }), 320);
   };
 
   document.querySelectorAll('[data-action="open-access"]').forEach((button) => {
     button.addEventListener("click", openAccess);
   });
 
-  const requestAccessCode = (code) => new Promise((resolve, reject) => {
-    const callbackName = `__astreaAccess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const script = document.createElement("script");
+  const GOOGLE_SCRIPT_HOSTS = new Set([
+    "https://script.google.com",
+    "https://script.googleusercontent.com"
+  ]);
+
+  const requestAccessViaCredentiallessFrame = (code) => new Promise((resolve, reject) => {
+    const requestId = `astrea_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const frame = document.createElement("iframe");
+    const timeout = window.setTimeout(() => cleanup(new Error("timeout")), 10000);
 
     const cleanup = (error, data) => {
-      window.clearTimeout(timer);
+      window.clearTimeout(timeout);
+      window.removeEventListener("message", onMessage);
+      frame.remove();
+      error ? reject(error) : resolve(data);
+    };
+
+    const onMessage = (event) => {
+      const payload = event.data;
+      if (!payload || payload.type !== "astrea-access-response" || payload.requestId !== requestId) return;
+
+      // Apps Script puede terminar sirviendo desde script.googleusercontent.com.
+      // Aceptamos únicamente orígenes Google esperados o "null" cuando el iframe
+      // está sandboxeado, y validamos además el requestId impredecible.
+      if (event.origin !== "null" && !GOOGLE_SCRIPT_HOSTS.has(event.origin)) return;
+
+      cleanup(null, payload.data);
+    };
+
+    window.addEventListener("message", onMessage);
+
+    const url = new URL(API_ENDPOINT);
+    url.searchParams.set("action", "validateAccess");
+    url.searchParams.set("code", code);
+    url.searchParams.set("transport", "iframe");
+    url.searchParams.set("requestId", requestId);
+    url.searchParams.set("_", Date.now().toString());
+
+    frame.hidden = true;
+    frame.setAttribute("aria-hidden", "true");
+    frame.setAttribute("sandbox", "allow-scripts");
+    frame.setAttribute("referrerpolicy", "no-referrer");
+
+    // Chromium/Edge: fuerza un contexto efímero sin cookies/cuenta Google.
+    // En navegadores que no soportan credentialless, el atributo simplemente
+    // se ignora y el fallback JSONP sigue disponible.
+    try {
+      frame.setAttribute("credentialless", "");
+      if ("credentialless" in frame) frame.credentialless = true;
+    } catch (_) {}
+
+    frame.src = url.toString();
+    frame.addEventListener("error", () => cleanup(new Error("frame-network")), { once: true });
+    document.body.appendChild(frame);
+  });
+
+  const requestAccessViaJsonp = (code) => new Promise((resolve, reject) => {
+    const callbackName = `__astreaAccess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    const timeout = window.setTimeout(() => cleanup(new Error("timeout")), 9000);
+
+    const cleanup = (error, data) => {
+      window.clearTimeout(timeout);
       try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
       script.remove();
       error ? reject(error) : resolve(data);
     };
 
-    const timer = window.setTimeout(() => cleanup(new Error("timeout")), 10000);
     window[callbackName] = (data) => cleanup(null, data);
 
     const url = new URL(API_ENDPOINT);
     url.searchParams.set("action", "validateAccess");
     url.searchParams.set("code", code);
-    // "prefix" sigue exactamente el patrón JSONP documentado por Apps Script.
     url.searchParams.set("prefix", callbackName);
+    // Mitigación adicional para navegadores con varias cuentas Google.
+    url.searchParams.set("authuser", "0");
     url.searchParams.set("_", Date.now().toString());
 
     script.src = url.toString();
@@ -294,6 +350,15 @@
     script.onerror = () => cleanup(new Error("network"));
     document.head.appendChild(script);
   });
+
+  const requestAccessCode = async (code) => {
+    try {
+      return await requestAccessViaCredentiallessFrame(code);
+    } catch (frameError) {
+      console.warn("ASTREA access: credentialless iframe fallback", frameError);
+      return requestAccessViaJsonp(code);
+    }
+  };
 
   const safeHttpUrl = (value) => {
     try {

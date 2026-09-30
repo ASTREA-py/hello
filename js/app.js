@@ -272,28 +272,39 @@
     "https://script.googleusercontent.com"
   ]);
 
-  const requestAccessViaCredentiallessFrame = (code) => new Promise((resolve, reject) => {
-    const requestId = `astrea_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const frame = document.createElement("iframe");
-    const timeout = window.setTimeout(() => cleanup(new Error("timeout")), 10000);
+  const createCredentiallessFrameRequest = (code) => {
+    let settled = false;
+    let frame = null;
+    let timer = null;
+    let onMessage = null;
 
-    const cleanup = (error, data) => {
-      window.clearTimeout(timeout);
-      window.removeEventListener("message", onMessage);
-      frame.remove();
-      error ? reject(error) : resolve(data);
+    let resolvePromise;
+    let rejectPromise;
+
+    const promise = new Promise((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+
+    const finish = (error, data) => {
+      if (settled) return;
+      settled = true;
+
+      if (timer) window.clearTimeout(timer);
+      if (onMessage) window.removeEventListener("message", onMessage);
+      if (frame) frame.remove();
+
+      error ? rejectPromise(error) : resolvePromise(data);
     };
 
-    const onMessage = (event) => {
+    const requestId = `astrea_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    frame = document.createElement("iframe");
+
+    onMessage = (event) => {
       const payload = event.data;
       if (!payload || payload.type !== "astrea-access-response" || payload.requestId !== requestId) return;
-
-      // Apps Script puede terminar sirviendo desde script.googleusercontent.com.
-      // Aceptamos únicamente orígenes Google esperados o "null" cuando el iframe
-      // está sandboxeado, y validamos además el requestId impredecible.
       if (event.origin !== "null" && !GOOGLE_SCRIPT_HOSTS.has(event.origin)) return;
-
-      cleanup(null, payload.data);
+      finish(null, payload.data);
     };
 
     window.addEventListener("message", onMessage);
@@ -310,54 +321,107 @@
     frame.setAttribute("sandbox", "allow-scripts");
     frame.setAttribute("referrerpolicy", "no-referrer");
 
-    // Chromium/Edge: fuerza un contexto efímero sin cookies/cuenta Google.
-    // En navegadores que no soportan credentialless, el atributo simplemente
-    // se ignora y el fallback JSONP sigue disponible.
     try {
       frame.setAttribute("credentialless", "");
       if ("credentialless" in frame) frame.credentialless = true;
     } catch (_) {}
 
     frame.src = url.toString();
-    frame.addEventListener("error", () => cleanup(new Error("frame-network")), { once: true });
+    frame.addEventListener("error", () => finish(new Error("frame-network")), { once: true });
+
+    timer = window.setTimeout(() => finish(new Error("frame-timeout")), 5000);
     document.body.appendChild(frame);
-  });
 
-  const requestAccessViaJsonp = (code) => new Promise((resolve, reject) => {
+    return {
+      promise,
+      cancel: () => finish(new Error("cancelled"))
+    };
+  };
+
+  const createJsonpRequest = (code) => {
+    let settled = false;
+    let script = null;
+    let timer = null;
+
+    let resolvePromise;
+    let rejectPromise;
+
+    const promise = new Promise((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+
     const callbackName = `__astreaAccess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const script = document.createElement("script");
-    const timeout = window.setTimeout(() => cleanup(new Error("timeout")), 9000);
 
-    const cleanup = (error, data) => {
-      window.clearTimeout(timeout);
+    const finish = (error, data) => {
+      if (settled) return;
+      settled = true;
+
+      if (timer) window.clearTimeout(timer);
       try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
-      script.remove();
-      error ? reject(error) : resolve(data);
+      if (script) script.remove();
+
+      error ? rejectPromise(error) : resolvePromise(data);
     };
 
-    window[callbackName] = (data) => cleanup(null, data);
+    window[callbackName] = (data) => finish(null, data);
 
     const url = new URL(API_ENDPOINT);
     url.searchParams.set("action", "validateAccess");
     url.searchParams.set("code", code);
     url.searchParams.set("prefix", callbackName);
-    // Mitigación adicional para navegadores con varias cuentas Google.
     url.searchParams.set("authuser", "0");
     url.searchParams.set("_", Date.now().toString());
 
+    script = document.createElement("script");
     script.src = url.toString();
     script.async = true;
-    script.onerror = () => cleanup(new Error("network"));
-    document.head.appendChild(script);
-  });
+    script.onerror = () => finish(new Error("jsonp-network"));
 
-  const requestAccessCode = async (code) => {
-    try {
-      return await requestAccessViaCredentiallessFrame(code);
-    } catch (frameError) {
-      console.warn("ASTREA access: credentialless iframe fallback", frameError);
-      return requestAccessViaJsonp(code);
-    }
+    timer = window.setTimeout(() => finish(new Error("jsonp-timeout")), 5000);
+    document.head.appendChild(script);
+
+    return {
+      promise,
+      cancel: () => finish(new Error("cancelled"))
+    };
+  };
+
+  const requestAccessCode = (code) => {
+    const frameRequest = createCredentiallessFrameRequest(code);
+    const jsonpRequest = createJsonpRequest(code);
+
+    return new Promise((resolve, reject) => {
+      let failures = 0;
+      let done = false;
+
+      const succeed = (data, winner) => {
+        if (done) return;
+        done = true;
+
+        if (winner !== "frame") frameRequest.cancel();
+        if (winner !== "jsonp") jsonpRequest.cancel();
+
+        resolve(data);
+      };
+
+      const fail = (error) => {
+        failures += 1;
+        if (done || failures < 2) return;
+        done = true;
+        reject(error);
+      };
+
+      frameRequest.promise.then(
+        (data) => succeed(data, "frame"),
+        fail
+      );
+
+      jsonpRequest.promise.then(
+        (data) => succeed(data, "jsonp"),
+        fail
+      );
+    });
   };
 
   const safeHttpUrl = (value) => {
@@ -411,7 +475,7 @@
       applyClientAccess(result);
     } catch (error) {
       console.error(error);
-      accessError.textContent = "No pudimos validar el código. Intentá nuevamente.";
+      accessError.textContent = "La validación está tardando más de lo esperado. Intentá nuevamente.";
     } finally {
       accessSubmit.disabled = false;
       accessSubmitLabel.textContent = "CONTINUAR";

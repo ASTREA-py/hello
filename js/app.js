@@ -1,20 +1,38 @@
 (() => {
- 
-  const LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbynJGYwj9_xwSg9G3jSekYv6o6Ape76-QGQ0uplS-bUerBEXqaaCtw_ptroZhl9jmCb/exec";
+  const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbynJGYwj9_xwSg9G3jSekYv6o6Ape76-QGQ0uplS-bUerBEXqaaCtw_ptroZhl9jmCb/exec";
 
   const states = [...document.querySelectorAll("[data-state]")];
+  const siteHeader = document.getElementById("siteHeader");
+
   const form = document.getElementById("leadForm");
   const openButton = document.querySelector('[data-action="open-form"]');
   const submitButton = document.getElementById("submitButton");
   const submitLabel = submitButton.querySelector(".button-label");
+
   const category = document.getElementById("category");
+  const categoryField = document.getElementById("categoryField");
+  const categoryPicker = document.getElementById("categoryPicker");
+  const categoryTrigger = document.getElementById("categoryTrigger");
+  const categoryLabel = document.getElementById("categoryLabel");
+  const categoryOptions = document.getElementById("categoryOptions");
   const categoryOtherField = document.getElementById("categoryOtherField");
   const categoryOther = document.getElementById("categoryOther");
+
   const salesOther = document.getElementById("salesOther");
   const salesOtherField = document.getElementById("salesOtherField");
   const salesOtherText = document.getElementById("salesOtherText");
   const comment = document.getElementById("comment");
   const commentCount = document.getElementById("commentCount");
+
+  const accessModal = document.getElementById("accessModal");
+  const accessForm = document.getElementById("accessForm");
+  const accessCode = document.getElementById("accessCode");
+  const accessError = document.getElementById("accessError");
+  const accessSubmit = document.getElementById("accessSubmit");
+  const accessSubmitLabel = accessSubmit.querySelector(".button-label");
+  const clientBusinessName = document.getElementById("clientBusinessName");
+  const demoLink = document.getElementById("demoLink");
+  const proposalLink = document.getElementById("proposalLink");
 
   const showState = (name) => {
     states.forEach((state) => {
@@ -22,6 +40,8 @@
       state.classList.toggle("is-active", active);
       state.setAttribute("aria-hidden", String(!active));
     });
+
+    siteHeader?.classList.toggle("is-hidden", name === "form" || name === "success");
   };
 
   openButton.addEventListener("click", () => {
@@ -29,11 +49,65 @@
     window.setTimeout(() => document.getElementById("name").focus({ preventScroll: true }), 420);
   });
 
-  category.addEventListener("change", () => {
-    const visible = category.value === "Otro";
-    categoryOtherField.hidden = !visible;
-    categoryOther.required = visible;
-    if (!visible) categoryOther.value = "";
+  // ---------- Selector ASTREA de rubro ----------
+  const closeCategory = () => {
+    categoryOptions.hidden = true;
+    categoryTrigger.setAttribute("aria-expanded", "false");
+  };
+
+  const openCategory = () => {
+    categoryOptions.hidden = false;
+    categoryTrigger.setAttribute("aria-expanded", "true");
+    const selected = categoryOptions.querySelector('[aria-selected="true"]') || categoryOptions.querySelector("button");
+    selected?.focus();
+  };
+
+  categoryTrigger.addEventListener("click", () => {
+    categoryOptions.hidden ? openCategory() : closeCategory();
+  });
+
+  categoryOptions.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-value]");
+    if (!option) return;
+
+    const value = option.dataset.value || "";
+    category.value = value;
+    categoryLabel.textContent = value || "Seleccioná un rubro";
+    categoryOptions.querySelectorAll("[role='option']").forEach((item) => {
+      item.setAttribute("aria-selected", String(item === option));
+    });
+
+    const otherVisible = value === "Otro";
+    categoryOtherField.hidden = !otherVisible;
+    categoryOther.required = otherVisible;
+    if (!otherVisible) categoryOther.value = "";
+
+    categoryField.classList.remove("has-error");
+    closeCategory();
+    categoryTrigger.focus();
+  });
+
+  categoryOptions.addEventListener("keydown", (event) => {
+    const options = [...categoryOptions.querySelectorAll("[role='option']")];
+    const current = options.indexOf(document.activeElement);
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeCategory();
+      categoryTrigger.focus();
+      return;
+    }
+
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+
+    const delta = event.key === "ArrowDown" ? 1 : -1;
+    const next = (current + delta + options.length) % options.length;
+    options[next]?.focus();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!categoryPicker.contains(event.target)) closeCategory();
   });
 
   salesOther.addEventListener("change", () => {
@@ -66,12 +140,19 @@
     let firstInvalid = null;
 
     [...form.elements].forEach((control) => {
-      if (!(control instanceof HTMLElement) || control.disabled || control.type === "checkbox" || control.type === "radio") return;
+      if (!(control instanceof HTMLElement)) return;
+      if (control.disabled || control.type === "checkbox" || control.type === "radio" || control.id === "category") return;
+
       if (!control.checkValidity()) {
         if (!firstInvalid) firstInvalid = control;
         setError(control, control.validity.typeMismatch ? "Revisá el formato de este dato." : "Este campo es obligatorio.");
       }
     });
+
+    if (!category.value) {
+      setError(categoryTrigger, "Elegí un rubro.");
+      firstInvalid ||= categoryTrigger;
+    }
 
     const productRange = form.querySelector('input[name="productRange"]:checked');
     if (!productRange) {
@@ -137,20 +218,11 @@
     event.preventDefault();
     if (!validate()) return;
 
-    if (!LEAD_ENDPOINT.startsWith("https://script.google.com/")) {
-      alert("Falta configurar la URL del endpoint de Google Apps Script en js/app.js.");
-      return;
-    }
-
     submitButton.disabled = true;
     submitLabel.textContent = "ENVIANDO…";
 
     try {
-      // Apps Script Web Apps no garantizan una respuesta CORS legible desde GitHub Pages.
-      // no-cors permite entregar el POST; la confirmación definitiva queda registrada
-      // en la Sheet y por correo. Para un backend con ACK verificable se requerirá
-      // un endpoint con CORS explícito en una etapa posterior.
-      await fetch(LEAD_ENDPOINT, {
+      await fetch(API_ENDPOINT, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -159,12 +231,131 @@
 
       showState("success");
       form.reset();
+
+      category.value = "";
+      categoryLabel.textContent = "Seleccioná un rubro";
+      categoryOptions.querySelectorAll("[role='option']").forEach((item) => item.removeAttribute("aria-selected"));
+      categoryOtherField.hidden = true;
+      categoryOther.required = false;
+      salesOtherField.hidden = true;
+      salesOtherText.required = false;
+      commentCount.textContent = "0 / 500";
     } catch (error) {
       console.error(error);
       alert("No pudimos enviar tus datos. Revisá tu conexión e intentá nuevamente.");
     } finally {
       submitLabel.textContent = "ENVIAR";
       submitButton.disabled = false;
+    }
+  });
+
+  // ---------- Acceso comercial por código ----------
+  const normalizeCode = (value) => String(value || "").trim().toUpperCase();
+
+  const openAccess = () => {
+    accessError.textContent = "";
+    accessModal.classList.add("is-open");
+    accessModal.setAttribute("aria-hidden", "false");
+    window.setTimeout(() => accessCode.focus(), 120);
+  };
+
+  const closeAccess = () => {
+    accessModal.classList.remove("is-open");
+    accessModal.setAttribute("aria-hidden", "true");
+  };
+
+  document.querySelectorAll('[data-action="open-access"]').forEach((button) => {
+    button.addEventListener("click", openAccess);
+  });
+
+  document.querySelectorAll('[data-action="close-access"]').forEach((button) => {
+    button.addEventListener("click", closeAccess);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && accessModal.classList.contains("is-open")) closeAccess();
+  });
+
+  const requestAccessCode = (code) => new Promise((resolve, reject) => {
+    const callbackName = `__astreaAccess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    const timer = window.setTimeout(() => cleanup(new Error("timeout")), 9000);
+
+    const cleanup = (error, data) => {
+      window.clearTimeout(timer);
+      delete window[callbackName];
+      script.remove();
+      error ? reject(error) : resolve(data);
+    };
+
+    window[callbackName] = (data) => cleanup(null, data);
+
+    const url = new URL(API_ENDPOINT);
+    url.searchParams.set("action", "validateAccess");
+    url.searchParams.set("code", code);
+    url.searchParams.set("callback", callbackName);
+
+    script.src = url.toString();
+    script.onerror = () => cleanup(new Error("network"));
+    document.head.appendChild(script);
+  });
+
+  const safeHttpUrl = (value) => {
+    try {
+      const url = new URL(String(value || ""));
+      return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+    } catch {
+      return "";
+    }
+  };
+
+  const applyClientAccess = (data) => {
+    clientBusinessName.textContent = data.businessName || "Tu comercio";
+
+    const demoUrl = safeHttpUrl(data.demoUrl);
+    const proposalUrl = safeHttpUrl(data.proposalUrl);
+
+    demoLink.href = demoUrl || "#";
+    proposalLink.href = proposalUrl || "#";
+    demoLink.hidden = !demoUrl;
+    proposalLink.hidden = !proposalUrl;
+
+    closeAccess();
+    showState("client");
+  };
+
+  accessForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const code = normalizeCode(accessCode.value);
+    if (!code) {
+      accessError.textContent = "Ingresá tu código para continuar.";
+      accessCode.focus();
+      return;
+    }
+
+    accessError.textContent = "";
+    accessSubmit.disabled = true;
+    accessSubmitLabel.textContent = "VALIDANDO…";
+
+    try {
+      const result = await requestAccessCode(code);
+
+      if (!result?.valid) {
+        accessError.textContent =
+          result?.reason === "expired"
+            ? "Este código ya venció. Contactá a ASTREA™ para solicitar uno nuevo."
+            : "No encontramos un acceso activo con ese código.";
+        return;
+      }
+
+      applyClientAccess(result);
+    } catch (error) {
+      console.error(error);
+      accessError.textContent = "No pudimos validar el código. Intentá nuevamente.";
+    } finally {
+      accessSubmit.disabled = false;
+      accessSubmitLabel.textContent = "CONTINUAR";
     }
   });
 })();

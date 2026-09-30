@@ -24,7 +24,6 @@
   const comment = document.getElementById("comment");
   const commentCount = document.getElementById("commentCount");
 
-  const accessModal = document.getElementById("accessModal");
   const accessForm = document.getElementById("accessForm");
   const accessCode = document.getElementById("accessCode");
   const accessError = document.getElementById("accessError");
@@ -41,7 +40,6 @@
       state.setAttribute("aria-hidden", String(!active));
     });
 
-    siteHeader?.classList.toggle("is-hidden", name === "form" || name === "success");
   };
 
   openButton.addEventListener("click", () => {
@@ -249,53 +247,50 @@
     }
   });
 
+  // ---------- Navegación ----------
+  document.querySelectorAll('[data-action="go-home"]').forEach((button) => {
+    button.addEventListener("click", () => {
+      accessError.textContent = "";
+      showState("intro");
+    });
+  });
+
   // ---------- Acceso comercial por código ----------
   const normalizeCode = (value) => String(value || "").trim().toUpperCase();
 
   const openAccess = () => {
     accessError.textContent = "";
-    accessModal.classList.add("is-open");
-    accessModal.setAttribute("aria-hidden", "false");
-    window.setTimeout(() => accessCode.focus(), 120);
-  };
-
-  const closeAccess = () => {
-    accessModal.classList.remove("is-open");
-    accessModal.setAttribute("aria-hidden", "true");
+    showState("access");
+    window.setTimeout(() => accessCode.focus({ preventScroll: true }), 320);
   };
 
   document.querySelectorAll('[data-action="open-access"]').forEach((button) => {
     button.addEventListener("click", openAccess);
   });
 
-  document.querySelectorAll('[data-action="close-access"]').forEach((button) => {
-    button.addEventListener("click", closeAccess);
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && accessModal.classList.contains("is-open")) closeAccess();
-  });
-
   const requestAccessCode = (code) => new Promise((resolve, reject) => {
     const callbackName = `__astreaAccess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement("script");
-    const timer = window.setTimeout(() => cleanup(new Error("timeout")), 9000);
 
     const cleanup = (error, data) => {
       window.clearTimeout(timer);
-      delete window[callbackName];
+      try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
       script.remove();
       error ? reject(error) : resolve(data);
     };
 
+    const timer = window.setTimeout(() => cleanup(new Error("timeout")), 10000);
     window[callbackName] = (data) => cleanup(null, data);
 
     const url = new URL(API_ENDPOINT);
     url.searchParams.set("action", "validateAccess");
     url.searchParams.set("code", code);
-    url.searchParams.set("callback", callbackName);
+    // "prefix" sigue exactamente el patrón JSONP documentado por Apps Script.
+    url.searchParams.set("prefix", callbackName);
+    url.searchParams.set("_", Date.now().toString());
 
     script.src = url.toString();
+    script.async = true;
     script.onerror = () => cleanup(new Error("network"));
     document.head.appendChild(script);
   });
@@ -320,7 +315,6 @@
     demoLink.hidden = !demoUrl;
     proposalLink.hidden = !proposalUrl;
 
-    closeAccess();
     showState("client");
   };
 

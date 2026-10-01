@@ -1,5 +1,6 @@
 (() => {
-  const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbynJGYwj9_xwSg9G3jSekYv6o6Ape76-QGQ0uplS-bUerBEXqaaCtw_ptroZhl9jmCb/exec";
+  const LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbynJGYwj9_xwSg9G3jSekYv6o6Ape76-QGQ0uplS-bUerBEXqaaCtw_ptroZhl9jmCb/exec";
+  const ACCESS_ENDPOINT = "PASTE_ACCESS_WEB_APP_EXEC_URL_HERE";
 
   const states = [...document.querySelectorAll("[data-state]")];
   const siteHeader = document.getElementById("siteHeader");
@@ -220,7 +221,7 @@
     submitLabel.textContent = "ENVIANDO…";
 
     try {
-      await fetch(API_ENDPOINT, {
+      await fetch(LEAD_ENDPOINT, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -251,6 +252,7 @@
   document.querySelectorAll('[data-action="go-home"]').forEach((button) => {
     button.addEventListener("click", () => {
       accessError.textContent = "";
+      accessCode.value = "";
       showState("intro");
     });
   });
@@ -267,19 +269,20 @@
     button.addEventListener("click", openAccess);
   });
 
-  // ---------- Transporte de acceso ----------
-  // GitHub Pages es hosting estático: no dispone de backend propio.
-  // Se utiliza un único request JSONP contra Apps Script para evitar
-  // la doble consulta concurrente de la versión anterior.
   const requestAccessCode = (code) => new Promise((resolve, reject) => {
+    if (!ACCESS_ENDPOINT.startsWith("https://script.google.com/macros/s/")) {
+      reject(new Error("ACCESS_ENDPOINT_NOT_CONFIGURED"));
+      return;
+    }
+
     const callbackName = `__astreaAccess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement("script");
     let settled = false;
 
     const cleanup = () => {
+      window.clearTimeout(timeout);
       try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
       script.remove();
-      window.clearTimeout(timeout);
     };
 
     const finish = (error, data) => {
@@ -291,18 +294,16 @@
 
     window[callbackName] = (data) => finish(null, data);
 
-    const url = new URL(API_ENDPOINT);
-    url.searchParams.set("action", "validateAccess");
+    const url = new URL(ACCESS_ENDPOINT);
     url.searchParams.set("code", code);
-    url.searchParams.set("prefix", callbackName);
-    url.searchParams.set("authuser", "0");
+    url.searchParams.set("callback", callbackName);
     url.searchParams.set("_", Date.now().toString());
 
     script.src = url.toString();
     script.async = true;
-    script.onerror = () => finish(new Error("network"));
+    script.onerror = () => finish(new Error("NETWORK"));
 
-    const timeout = window.setTimeout(() => finish(new Error("timeout")), 6000);
+    const timeout = window.setTimeout(() => finish(new Error("TIMEOUT")), 7000);
     document.head.appendChild(script);
   });
 
@@ -315,23 +316,8 @@
     }
   };
 
-  const trackSuccessfulAccess = (code) => {
-    try {
-      const url = new URL(API_ENDPOINT);
-      url.searchParams.set("action", "trackAccess");
-      url.searchParams.set("code", code);
-      url.searchParams.set("_", Date.now().toString());
 
-      fetch(url.toString(), {
-        method: "GET",
-        mode: "no-cors",
-        cache: "no-store",
-        keepalive: true
-      }).catch(() => {});
-    } catch (_) {}
-  };
-
-  const applyClientAccess = (data, code) => {
+  const applyClientAccess = (data) => {
     clientBusinessName.textContent = data.businessName || "Tu comercio";
 
     const demoUrl = safeHttpUrl(data.demoUrl);
@@ -343,7 +329,6 @@
     proposalLink.hidden = !proposalUrl;
 
     showState("client");
-    trackSuccessfulAccess(code);
   };
 
   accessForm.addEventListener("submit", async (event) => {
@@ -371,10 +356,13 @@
         return;
       }
 
-      applyClientAccess(result, code);
+      applyClientAccess(result);
     } catch (error) {
       console.error(error);
-      accessError.textContent = "No pudimos validar el código. Intentá nuevamente.";
+      accessError.textContent =
+        error?.message === "ACCESS_ENDPOINT_NOT_CONFIGURED"
+          ? "Falta configurar el endpoint de acceso."
+          : "No pudimos validar el código. Intentá nuevamente.";
     } finally {
       accessSubmit.disabled = false;
       accessSubmitLabel.textContent = "CONTINUAR";

@@ -1,6 +1,6 @@
 (() => {
   const LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbynJGYwj9_xwSg9G3jSekYv6o6Ape76-QGQ0uplS-bUerBEXqaaCtw_ptroZhl9jmCb/exec";
-  const ACCESS_ENDPOINT = "PASTE_ACCESS_WEB_APP_EXEC_URL_HERE";
+  const ACCESS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwjRHpkKAyVp-BQTtYff-ypvTjbkG_TUxOzk-Axumm11W4RfC7n4JfpoayPSwikUr8j/exec";
 
   const states = [...document.querySelectorAll("[data-state]")];
   const siteHeader = document.getElementById("siteHeader");

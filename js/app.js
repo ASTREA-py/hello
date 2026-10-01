@@ -267,101 +267,26 @@
     button.addEventListener("click", openAccess);
   });
 
-  const GOOGLE_SCRIPT_HOSTS = new Set([
-    "https://script.google.com",
-    "https://script.googleusercontent.com"
-  ]);
-
-  const createCredentiallessFrameRequest = (code) => {
-    let settled = false;
-    let frame = null;
-    let timer = null;
-    let onMessage = null;
-
-    let resolvePromise;
-    let rejectPromise;
-
-    const promise = new Promise((resolve, reject) => {
-      resolvePromise = resolve;
-      rejectPromise = reject;
-    });
-
-    const finish = (error, data) => {
-      if (settled) return;
-      settled = true;
-
-      if (timer) window.clearTimeout(timer);
-      if (onMessage) window.removeEventListener("message", onMessage);
-      if (frame) frame.remove();
-
-      error ? rejectPromise(error) : resolvePromise(data);
-    };
-
-    const requestId = `astrea_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    frame = document.createElement("iframe");
-
-    onMessage = (event) => {
-      const payload = event.data;
-      if (!payload || payload.type !== "astrea-access-response" || payload.requestId !== requestId) return;
-      if (event.origin !== "null" && !GOOGLE_SCRIPT_HOSTS.has(event.origin)) return;
-      finish(null, payload.data);
-    };
-
-    window.addEventListener("message", onMessage);
-
-    const url = new URL(API_ENDPOINT);
-    url.searchParams.set("action", "validateAccess");
-    url.searchParams.set("code", code);
-    url.searchParams.set("transport", "iframe");
-    url.searchParams.set("requestId", requestId);
-    url.searchParams.set("_", Date.now().toString());
-
-    frame.hidden = true;
-    frame.setAttribute("aria-hidden", "true");
-    frame.setAttribute("sandbox", "allow-scripts");
-    frame.setAttribute("referrerpolicy", "no-referrer");
-
-    try {
-      frame.setAttribute("credentialless", "");
-      if ("credentialless" in frame) frame.credentialless = true;
-    } catch (_) {}
-
-    frame.src = url.toString();
-    frame.addEventListener("error", () => finish(new Error("frame-network")), { once: true });
-
-    timer = window.setTimeout(() => finish(new Error("frame-timeout")), 5000);
-    document.body.appendChild(frame);
-
-    return {
-      promise,
-      cancel: () => finish(new Error("cancelled"))
-    };
-  };
-
-  const createJsonpRequest = (code) => {
-    let settled = false;
-    let script = null;
-    let timer = null;
-
-    let resolvePromise;
-    let rejectPromise;
-
-    const promise = new Promise((resolve, reject) => {
-      resolvePromise = resolve;
-      rejectPromise = reject;
-    });
-
+  // ---------- Transporte de acceso ----------
+  // GitHub Pages es hosting estático: no dispone de backend propio.
+  // Se utiliza un único request JSONP contra Apps Script para evitar
+  // la doble consulta concurrente de la versión anterior.
+  const requestAccessCode = (code) => new Promise((resolve, reject) => {
     const callbackName = `__astreaAccess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    let settled = false;
+
+    const cleanup = () => {
+      try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+      script.remove();
+      window.clearTimeout(timeout);
+    };
 
     const finish = (error, data) => {
       if (settled) return;
       settled = true;
-
-      if (timer) window.clearTimeout(timer);
-      try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
-      if (script) script.remove();
-
-      error ? rejectPromise(error) : resolvePromise(data);
+      cleanup();
+      error ? reject(error) : resolve(data);
     };
 
     window[callbackName] = (data) => finish(null, data);
@@ -373,56 +298,13 @@
     url.searchParams.set("authuser", "0");
     url.searchParams.set("_", Date.now().toString());
 
-    script = document.createElement("script");
     script.src = url.toString();
     script.async = true;
-    script.onerror = () => finish(new Error("jsonp-network"));
+    script.onerror = () => finish(new Error("network"));
 
-    timer = window.setTimeout(() => finish(new Error("jsonp-timeout")), 5000);
+    const timeout = window.setTimeout(() => finish(new Error("timeout")), 6000);
     document.head.appendChild(script);
-
-    return {
-      promise,
-      cancel: () => finish(new Error("cancelled"))
-    };
-  };
-
-  const requestAccessCode = (code) => {
-    const frameRequest = createCredentiallessFrameRequest(code);
-    const jsonpRequest = createJsonpRequest(code);
-
-    return new Promise((resolve, reject) => {
-      let failures = 0;
-      let done = false;
-
-      const succeed = (data, winner) => {
-        if (done) return;
-        done = true;
-
-        if (winner !== "frame") frameRequest.cancel();
-        if (winner !== "jsonp") jsonpRequest.cancel();
-
-        resolve(data);
-      };
-
-      const fail = (error) => {
-        failures += 1;
-        if (done || failures < 2) return;
-        done = true;
-        reject(error);
-      };
-
-      frameRequest.promise.then(
-        (data) => succeed(data, "frame"),
-        fail
-      );
-
-      jsonpRequest.promise.then(
-        (data) => succeed(data, "jsonp"),
-        fail
-      );
-    });
-  };
+  });
 
   const safeHttpUrl = (value) => {
     try {
@@ -433,7 +315,23 @@
     }
   };
 
-  const applyClientAccess = (data) => {
+  const trackSuccessfulAccess = (code) => {
+    try {
+      const url = new URL(API_ENDPOINT);
+      url.searchParams.set("action", "trackAccess");
+      url.searchParams.set("code", code);
+      url.searchParams.set("_", Date.now().toString());
+
+      fetch(url.toString(), {
+        method: "GET",
+        mode: "no-cors",
+        cache: "no-store",
+        keepalive: true
+      }).catch(() => {});
+    } catch (_) {}
+  };
+
+  const applyClientAccess = (data, code) => {
     clientBusinessName.textContent = data.businessName || "Tu comercio";
 
     const demoUrl = safeHttpUrl(data.demoUrl);
@@ -445,6 +343,7 @@
     proposalLink.hidden = !proposalUrl;
 
     showState("client");
+    trackSuccessfulAccess(code);
   };
 
   accessForm.addEventListener("submit", async (event) => {
@@ -472,10 +371,10 @@
         return;
       }
 
-      applyClientAccess(result);
+      applyClientAccess(result, code);
     } catch (error) {
       console.error(error);
-      accessError.textContent = "La validación está tardando más de lo esperado. Intentá nuevamente.";
+      accessError.textContent = "No pudimos validar el código. Intentá nuevamente.";
     } finally {
       accessSubmit.disabled = false;
       accessSubmitLabel.textContent = "CONTINUAR";

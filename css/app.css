@@ -268,19 +268,23 @@ input:focus-visible, textarea:focus-visible,
 .state--form {
   padding-top: 12px;
   padding-bottom: max(18px, env(safe-area-inset-bottom));
+  overflow: hidden;
 }
 .lead-form {
   width: min(720px, 92vw);
+  height: 100%;
+  min-height: 0;
   max-height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: stretch;
   gap: 12px;
 }
 .form-card {
   width: 100%;
+  height: 100%;
   min-height: 0;
-  max-height: min(820px, 100%);
+  max-height: 100%;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   border: 1.5px solid var(--white-72);
@@ -314,7 +318,11 @@ input:focus-visible, textarea:focus-visible,
 }
 .form-body {
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   padding: 4px clamp(22px, 4vw, 48px) 24px;
   scrollbar-width: thin;
   scrollbar-color: var(--white-45) transparent;
@@ -526,8 +534,8 @@ input:focus-visible, textarea:focus-visible,
   .intro-kicker, .intro-brand { font-size: clamp(1.65rem, 6.8vw, 2.15rem); }
   .intro-copy h1 { font-size: clamp(2.67rem, 11vw, 3.48rem); }
   .client-actions { flex-direction: column; align-items: center; }
-  .lead-form { width: 100%; max-height: 100%; }
-  .form-card { max-height: 100%; border-radius: 22px; }
+  .lead-form { width: 100%; height: 100%; min-height: 0; max-height: 100%; }
+  .form-card { height: 100%; min-height: 0; max-height: 100%; border-radius: 22px; }
   .form-header { padding: 22px 18px 15px; }
   .form-header p { font-size: .84rem; }
   .form-body { padding: 4px 18px 22px; }

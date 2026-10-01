@@ -202,12 +202,6 @@ input:focus-visible, textarea:focus-visible,
 .access-body {
   padding: 4px clamp(26px, 5vw, 58px) 8px;
 }
-.access-body label {
-  display: block;
-  margin: 0 0 7px;
-  font-size: .92rem;
-  font-weight: 600;
-}
 .access-input {
   width: 100%;
   height: 48px;
@@ -578,4 +572,38 @@ input:focus-visible, textarea:focus-visible,
   outline: none;
   outline-offset: 0;
   box-shadow: none;
+}
+
+
+/* Final layout hardening */
+.site-shell {
+  min-height: 100dvh;
+  height: 100dvh;
+}
+
+.experience,
+.state--form,
+.lead-form,
+.form-card {
+  min-height: 0;
+}
+
+.state--form {
+  overflow: hidden;
+}
+
+.lead-form {
+  height: 100%;
+}
+
+.form-card {
+  height: 100%;
+}
+
+.form-body {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }

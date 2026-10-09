@@ -607,3 +607,9 @@ input:focus-visible, textarea:focus-visible,
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
+
+
+/* Acciones personalizadas: ocultar botones sin URL. */
+.client-link[hidden] {
+  display: none !important;
+}
